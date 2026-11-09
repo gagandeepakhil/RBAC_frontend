@@ -1,6 +1,6 @@
 import React from "react";
 import API from "../../../constants";
-import { Typography } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import Stack from "@mui/material/Stack";
 import UserTable from "./usertable";
 import { useSnackbar } from "../../snackbar";
@@ -10,6 +10,7 @@ const UserManagement = () => {
   const [rolesList, setRolesList] = React.useState([]);
   const [roleMap, setRoleMap] = React.useState({});
   const [currentPermissions, setCurrentPermissions] = React.useState({});
+  const [isLoading, setIsLoading] = React.useState(true);
 
   const showSnackbar = useSnackbar();
 
@@ -82,54 +83,53 @@ const UserManagement = () => {
   };
 
   const getCurrentPermissions = async () => {
-    const roleId = JSON.parse(localStorage.getItem("user")).roleId;
+    const roleId = JSON.parse(localStorage.getItem("user"))?.roleId;
     try {
-      fetch(`${API.DATA_URL}${API.DATA_ENDPOINTS.getRoleById}${roleId}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          "x-auth-token": localStorage.getItem("token"),
-        },
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log(data);
-
-          setCurrentPermissions(data.role.permissions);
-          showSnackbar("Data loaded", 3000, "success");
-        });
+      const response = await fetch(
+        `${API.DATA_URL}${API.DATA_ENDPOINTS.getRoleById}${roleId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            "x-auth-token": localStorage.getItem("token"),
+          },
+        }
+      );
+      const data = await response.json();
+      setCurrentPermissions(data.role?.permissions || {});
     } catch (error) {
       console.error(error);
+      showSnackbar("Failed to load your permissions.", 3000, "error");
     }
   };
 
   const handleRefrehsh = () => {
+    setIsLoading(true);
     showSnackbar("Loading data", 3000, "info");
     getAllUsers().then((data) => {
       if (data?.error) {
         showSnackbar(data?.error, 3000, "error");
+        setIsLoading(false);
         return;
       }
-      // setUserData(data.users);
       //create users data
-      var usersData = [];
+      const usersData = [];
       data?.users?.forEach((user) => {
         usersData.push({
           id: user._id,
           name: user.name,
           email: user.email,
-          roleName: user.roleId.roleName,
+          roleName: user.roleId?.roleName,
           status: user.status,
           createdAt: user.createdAt,
         });
       });
-      console.log(usersData, data);
 
       setUsersData(usersData);
+      setIsLoading(false);
     });
     getAllRoles()
       .then((data) => {
-        console.log(data);
         if (data?.error) {
           showSnackbar(data?.error, 3000, "error");
           return;
@@ -139,7 +139,6 @@ const UserManagement = () => {
         data?.roles?.forEach((role) => {
           roleMap[role?.roleName] = role._id;
         });
-        console.log(roleMap);
         setRoleMap(roleMap);
         setRolesList(data?.roles?.map((role) => role?.roleName));
       })
@@ -154,9 +153,29 @@ const UserManagement = () => {
     handleRefrehsh();
   }, []);
 
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          height: "100%",
+          gap: 2,
+        }}
+      >
+        <CircularProgress />
+        <Typography variant="body2" color="textSecondary">
+          Loading users...
+        </Typography>
+      </Box>
+    );
+  }
+
   return (
     <>
-    {usersData.length > 0 ? (
+      {usersData.length > 0 ? (
         <UserTable
           editableFields={editableFields}
           columns={columns}
@@ -166,8 +185,14 @@ const UserManagement = () => {
           currentPermissions={currentPermissions}
           handleRefresh={handleRefrehsh}
         />
-      ): <p>No users found</p>}</>
-      
+      ) : (
+        <Stack alignItems="center" sx={{ mt: 4 }}>
+          <Typography variant="body1" color="textSecondary">
+            No users found.
+          </Typography>
+        </Stack>
+      )}
+    </>
   );
 };
 

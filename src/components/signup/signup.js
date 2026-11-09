@@ -67,15 +67,16 @@ const Signup = () => {
   };
 
   function generateMD5(input) {
-    input = window.md5.update(input);
-    return input;
+    // js-md5's `.update()` returns a chainable hasher object, not the digest
+    // itself - `.hex()` (or calling md5(input) directly) is needed to get the
+    // actual hex string to compare against the server-provided OTP hash.
+    return window.md5.update(input).hex();
   }
 
   const validateOtp = () => {
     if (!currentOtp || !verificationOtp) return "OTP is required.";
-    console.log(generateMD5(currentOtp), verificationOtp, currentOtp);
 
-    if (generateMD5(currentOtp) != verificationOtp) {
+    if (generateMD5(currentOtp) !== verificationOtp) {
       return "Invalid OTP. Please try again.";
     }
 
@@ -146,7 +147,6 @@ const Signup = () => {
       return;
     }
 
-    console.log(name, mail, password);
     showSnackbar("Sending request to admin", 3000, "warning");
     const response = await fetch(
       API.DATA_URL + API.DATA_ENDPOINTS.sendUserRequest,
@@ -164,7 +164,6 @@ const Signup = () => {
     );
 
     const data = await response.json();
-    console.log(data, response.status);
 
     //based on status code
     if (response.status === 200) {
