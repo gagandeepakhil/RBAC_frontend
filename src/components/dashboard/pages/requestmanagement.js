@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   Box,
+  CircularProgress,
   Container,
   Table,
   TableBody,
@@ -13,6 +14,7 @@ import {
   Tabs,
   Tab,
   Toolbar,
+  Typography,
 } from "@mui/material";
 import LoopIcon from "@mui/icons-material/Loop";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
@@ -25,6 +27,7 @@ const UserRequests = () => {
 
   const [requests, setRequests] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [filteredRequests, setFilteredRequests] = useState({
     approved: [],
     declined: [],
@@ -33,6 +36,7 @@ const UserRequests = () => {
   });
 
   const getUserRequests = async () => {
+    setIsLoading(true);
     try {
       showSnackbar("Fetching requests...", 3000, "info");
       const response = await fetch(
@@ -80,6 +84,8 @@ const UserRequests = () => {
         3000,
         "error"
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -104,12 +110,8 @@ const UserRequests = () => {
     });
   }, [requests]);
 
-  useEffect(() => {
-    console.log(filteredRequests);
-  }, [filteredRequests]);
   const handleAction = (id, action) => {
     var status = action === "Approved" ? "Approved" : "Declined";
-    console.log(id, status);
 
     fetch(`${API.DATA_URL}${API.DATA_ENDPOINTS.updateRequestStatus}`, {
       method: "PUT",
@@ -120,7 +122,6 @@ const UserRequests = () => {
       body: JSON.stringify({ requestId: id, status }),
     })
       .then(async (response) => {
-        console.log(response);
         var data = await response.json();
         if (response.status === 200) {
           showSnackbar(data.message, 3000, "success");
@@ -170,35 +171,45 @@ const UserRequests = () => {
           </TableRow>
         </TableHead>
         <TableBody>
-          {data.map((request) => (
-            <TableRow key={request._id}>
-              <TableCell>{request.name}</TableCell>
-              <TableCell>{request.email}</TableCell>
-              <TableCell>{request.status}</TableCell>
-              <TableCell>{formatDate(request.createdAt)}</TableCell>
-              {activeTab === 1 && (
-                <TableCell>
-                  <Button
-                    variant="contained"
-                    color="success"
-                    size="small"
-                    onClick={() => handleAction(request._id, "Approved")}
-                    sx={{ marginRight: 1 }}
-                  >
-                    <PersonAddIcon />
-                  </Button>
-                  <Button
-                    variant="contained"
-                    color="error"
-                    size="small"
-                    onClick={() => handleAction(request._id, "Declined")}
-                  >
-                    <PersonRemoveIcon />
-                  </Button>
-                </TableCell>
-              )}
+          {data.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={activeTab === 1 ? 5 : 4} align="center">
+                <Typography variant="body2" color="textSecondary" sx={{ py: 2 }}>
+                  No requests to show.
+                </Typography>
+              </TableCell>
             </TableRow>
-          ))}
+          ) : (
+            data.map((request) => (
+              <TableRow key={request._id}>
+                <TableCell>{request.name}</TableCell>
+                <TableCell>{request.email}</TableCell>
+                <TableCell>{request.status}</TableCell>
+                <TableCell>{formatDate(request.createdAt)}</TableCell>
+                {activeTab === 1 && (
+                  <TableCell>
+                    <Button
+                      variant="contained"
+                      color="success"
+                      size="small"
+                      onClick={() => handleAction(request._id, "Approved")}
+                      sx={{ marginRight: 1 }}
+                    >
+                      <PersonAddIcon />
+                    </Button>
+                    <Button
+                      variant="contained"
+                      color="error"
+                      size="small"
+                      onClick={() => handleAction(request._id, "Declined")}
+                    >
+                      <PersonRemoveIcon />
+                    </Button>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))
+          )}
         </TableBody>
       </Table>
     </TableContainer>
@@ -264,10 +275,18 @@ const UserRequests = () => {
       </Box>
 
       {/* Render the table based on active tab */}
-      {activeTab === 0 && renderTable(filteredRequests.all)}
-      {activeTab === 1 && renderTable(filteredRequests.pending)}
-      {activeTab === 2 && renderTable(filteredRequests.approved)}
-      {activeTab === 3 && renderTable(filteredRequests.declined)}
+      {isLoading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          {activeTab === 0 && renderTable(filteredRequests.all)}
+          {activeTab === 1 && renderTable(filteredRequests.pending)}
+          {activeTab === 2 && renderTable(filteredRequests.approved)}
+          {activeTab === 3 && renderTable(filteredRequests.declined)}
+        </>
+      )}
     </Container>
   );
 };

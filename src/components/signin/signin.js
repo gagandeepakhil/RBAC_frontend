@@ -14,7 +14,8 @@ const Signin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [emailError, setEmailError] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  // Password validation isn't performed on sign-in, so this is intentionally read-only.
+  const [passwordError] = useState("");
 
   const showSnackbar = useSnackbar();
 
@@ -72,11 +73,8 @@ const Signin = () => {
       // Handle network or unexpected errors
       console.error("Error during sign-in:", error);
       showSnackbar("Something went wrong. Please try again later.", 3000, "error");
-    } finally {
-      // Hide loading indicator or enable the submit button here (if used)
-      console.log("Form submitted", { email, password });
     }
-  };  
+  };
 
   return (
     <Container

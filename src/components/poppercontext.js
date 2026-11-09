@@ -1,10 +1,10 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { Popper, Button, Typography, Box } from "@mui/material";
+import { Dialog, DialogContent, DialogActions, Button, Typography } from "@mui/material";
 
 const PopperContext = createContext();
 
 export const PopperProvider = ({ children }) => {
-  const [popperState, setPopperState] = useState({
+  const [confirmState, setConfirmState] = useState({
     open: false,
     message: "",
     resolve: null,
@@ -12,56 +12,38 @@ export const PopperProvider = ({ children }) => {
 
   const confirm = useCallback((message) => {
     return new Promise((resolve) => {
-      setPopperState({ open: true, message, resolve });
+      setConfirmState({ open: true, message, resolve });
     });
   }, []);
 
   const handleClose = (result) => {
-    if (popperState.resolve) {
-      popperState.resolve(result);
+    if (confirmState.resolve) {
+      confirmState.resolve(result);
     }
-    setPopperState({ open: false, message: "", resolve: null });
+    setConfirmState({ open: false, message: "", resolve: null });
   };
 
   return (
     <PopperContext.Provider value={{ confirm }}>
       {children}
-      <Popper
-        open={popperState.open}
-        placement="auto"
-        style={{
-          zIndex: 1300,
-          position: "absolute",
-          left: "50%",
-          transform: "translateX(-50%)",
-          top: "50%",
-          transform: "translateY(-50%)",
-        }}
-      >
-        <Box
-          sx={{ p: 2, backgroundColor: "white", borderRadius: 1, boxShadow: 3,opacity:0.9 ,border: "1px solid black",backdropFilter:"blur(5px)" }}
-        >
-          <Typography variant="body1" sx={{ mb: 2 }}>
-            {popperState.message}
-          </Typography>
-          <Box sx={{ display: "flex", justifyContent: "space-evenly" }}>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => handleClose(true)}
-            >
-              Ok
-            </Button>
-            <Button
-              variant="outlined"
-              color="primary"
-              onClick={() => handleClose(false)}
-            >
-              Cancel
-            </Button>
-          </Box>
-        </Box>
-      </Popper>
+      {/* A centered, anchor-less confirm dialog is what MUI's Dialog is built for.
+          The previous implementation used Popper without an `anchorEl`, which MUI
+          warns about on every open since Popper expects to be anchored to an
+          element - Dialog needs no anchor and handles the backdrop/focus trap
+          correctly out of the box. */}
+      <Dialog open={confirmState.open} onClose={() => handleClose(false)}>
+        <DialogContent>
+          <Typography variant="body1">{confirmState.message}</Typography>
+        </DialogContent>
+        <DialogActions>
+          <Button variant="outlined" color="primary" onClick={() => handleClose(false)}>
+            Cancel
+          </Button>
+          <Button variant="contained" color="primary" onClick={() => handleClose(true)} autoFocus>
+            Ok
+          </Button>
+        </DialogActions>
+      </Dialog>
     </PopperContext.Provider>
   );
 };

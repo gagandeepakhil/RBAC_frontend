@@ -53,16 +53,17 @@ function Home({ role, editable }) {
         const data = await response.json();
         if (response.status === 200) {
           showSnackbar(data.message, 3000, "success");
-          console.log("Password changed successfully:", newPassword);
           // Close modal
           handleCloseChangePassword();
         } else {
           showSnackbar(data.message, 3000, "error");
         }
+      }).catch((error) => {
+        console.error("Error changing password:", error);
+        showSnackbar("Something went wrong. Please try again later.", 3000, "error");
       });
     } else {
       showSnackbar("Passwords do not match", 3000, "error");
-      console.error("Passwords do not match!");
     }
   };
 
@@ -183,7 +184,7 @@ function Home({ role, editable }) {
                       <Typography variant="body2" color="textSecondary">
                         {userDetails.email}
                       </Typography>
-                      {userDetails?.email != "admin@example.com" &&(
+                      {userDetails?.email !== "admin@example.com" &&(
                         <Tooltip title="Change Password">
                         <IconButton
                           onClick={handleOpenChangePassword}

@@ -7,6 +7,7 @@ import {
   Drawer,
   List,
   ListItem,
+  ListItemButton,
   ListItemIcon,
   ListItemText,
   Box,
@@ -93,8 +94,6 @@ const AppLayout = () => {
   useEffect(() => {
     const fetchRole = async () => {
       const role = await getRoleById();
-      console.log(role);
-
       setRole(role?.role);
     };
     fetchRole();
@@ -230,45 +229,45 @@ const AppLayout = () => {
             {menuItems.map((item, index) => {
               const isSelected = selectedComponent === item.label;
               return (
-                <ListItem
-                  button
-                  key={index}
-                  onClick={() => setSelectedComponent(item.label)}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: isExpanded ? "flex-start" : "center",
-                    paddingY: "12px",
-                    transition: "padding 0.1s ease-in-out",
-                    backgroundColor: isSelected
-                      ? "rgba(0, 0, 255, 0.1)"
-                      : "transparent", // Change the background color for selected
-                    "&:hover": {
-                      backgroundColor: "rgba(0, 0, 255, 0.2)", // Hover effect
-                    },
-                  }}
-                >
-                  <ListItemIcon
+                <ListItem key={index} disablePadding>
+                  <ListItemButton
+                    onClick={() => setSelectedComponent(item.label)}
                     sx={{
-                      minWidth: isExpanded ? "40px" : "0px",
-                      justifyContent: "center",
-                      transition: "min-width 0.1s ease-in-out",
-                      color: isSelected ? "blue" : "inherit", // Change icon color for selected
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: isExpanded ? "flex-start" : "center",
+                      paddingY: "12px",
+                      transition: "padding 0.1s ease-in-out",
+                      backgroundColor: isSelected
+                        ? "rgba(0, 0, 255, 0.1)"
+                        : "transparent", // Change the background color for selected
+                      "&:hover": {
+                        backgroundColor: "rgba(0, 0, 255, 0.2)", // Hover effect
+                      },
                     }}
                   >
-                    {item.icon}
-                  </ListItemIcon>
-                  {isExpanded && (
-                    <ListItemText
-                      primary={item.label}
+                    <ListItemIcon
                       sx={{
-                        opacity: isExpanded ? 1 : 0,
-                        transition: "opacity 0.1s ease-in-out",
-                        color: isSelected ? "blue" : "inherit", // Change text color for selected
-                        fontSize: "small",
+                        minWidth: isExpanded ? "40px" : "0px",
+                        justifyContent: "center",
+                        transition: "min-width 0.1s ease-in-out",
+                        color: isSelected ? "blue" : "inherit", // Change icon color for selected
                       }}
-                    />
-                  )}
+                    >
+                      {item.icon}
+                    </ListItemIcon>
+                    {isExpanded && (
+                      <ListItemText
+                        primary={item.label}
+                        sx={{
+                          opacity: isExpanded ? 1 : 0,
+                          transition: "opacity 0.1s ease-in-out",
+                          color: isSelected ? "blue" : "inherit", // Change text color for selected
+                          fontSize: "small",
+                        }}
+                      />
+                    )}
+                  </ListItemButton>
                 </ListItem>
               );
             })}

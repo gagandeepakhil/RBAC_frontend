@@ -50,9 +50,11 @@ const UserTable = ({
   const [sortConfig, setSortConfig] = useState({ key: null, direction: "asc" });
   const showSnackbar = useSnackbar();
   const { confirm } = usePopper();
+  // Keep the local, editable copy of the table in sync whenever the parent
+  // re-fetches and passes down new data (e.g. after a refresh).
   useEffect(() => {
-    console.log(users);
-  }, [users]);
+    setUsers(data);
+  }, [data]);
   const [isAddingUser, setIsAddingUser] = React.useState(false);
 
   const handleAddUser = () => {
@@ -98,14 +100,12 @@ const UserTable = ({
       body: JSON.stringify(body),
     })
       .then((response) => {
-        if (response.status != 201) {
+        if (response.status !== 201) {
           response.json().then((data) => {
             showSnackbar(data.message, 3000, "error");
           });
         } else {
           response.json().then((data) => {
-            console.log(data);
-
             var roleName = "";
             //find role name based on value of rolemanp
             Object.values(roleMap).forEach((value, index) => {
@@ -123,7 +123,6 @@ const UserTable = ({
               status: data.user.status,
               createdAt: data.user.createdAt,
             };
-            console.log(newUser);
             setUsers([...users, newUser]);
 
             showSnackbar(data.message, 3000, "success");
@@ -131,8 +130,7 @@ const UserTable = ({
         }
       })
       .catch((error) => {
-        console.log(error);
-
+        console.error(error);
         showSnackbar("Something went wrong", 3000, "error");
       });
     setIsAddingUser(false);
@@ -178,7 +176,7 @@ const UserTable = ({
         body: JSON.stringify(body),
       }
     ).then((response) => {
-      if (response.status != 200) {
+      if (response.status !== 200) {
         showSnackbar("Something went wrong", 3000, "error");
         return;
       } else {
@@ -204,7 +202,7 @@ const UserTable = ({
         "x-auth-token": localStorage.getItem("token"),
       },
     }).then((response) => {
-      if (response.status != 200) {
+      if (response.status !== 200) {
         showSnackbar("Something went wrong", 3000, "error");
       } else {
         setUsers((prevUsers) => prevUsers.filter((user) => user.id !== id));
@@ -244,7 +242,7 @@ const UserTable = ({
             onChange={(e) => handleChange(columnName, e.target.value)}
             size="small"
             disabled={
-              editingRowId == JSON.parse(localStorage?.getItem("user"))?.id
+              editingRowId === JSON.parse(localStorage?.getItem("user"))?.id
             }
           >
             {options?.map((option) => (
@@ -427,7 +425,7 @@ const UserTable = ({
             )}
             {filteredUsers.map(
               (user) =>
-                user?.email != "admin@example.com" && (
+                user?.email !== "admin@example.com" && (
                   <TableRow
                     key={user.id}
                     sx={{
@@ -479,7 +477,7 @@ const UserTable = ({
                               onClick={() => handleDeleteClick(user.id)}
                               disabled={
                                 localStorage.getItem("user") &&
-                                JSON.parse(localStorage.getItem("user"))?.id ==
+                                JSON.parse(localStorage.getItem("user"))?.id ===
                                   user?.id
                                   ? true
                                   : false

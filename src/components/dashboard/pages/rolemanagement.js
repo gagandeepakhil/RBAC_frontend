@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {
+  Box,
+  CircularProgress,
   Container,
   Typography,
   Table,
@@ -21,7 +23,6 @@ import {
   Save as SaveIcon,
   Cancel as CancelIcon,
   Delete as DeleteIcon,
-  Add as AddIcon,
 } from "@mui/icons-material";
 import LoopIcon from "@mui/icons-material/Loop";
 import API from "../../../constants";
@@ -71,6 +72,7 @@ const permissionList = [
 
 const RolePermissionManagement = () => {
   const [roles, setRoles] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingRoleId, setEditingRoleId] = useState(null);
   const [editedRole, setEditedRole] = useState(null);
   const [newRoleName, setNewRoleName] = useState("");
@@ -283,8 +285,10 @@ const RolePermissionManagement = () => {
   };
 
   const handleRefresh = () => {
+    setIsLoading(true);
     showSnackbar("Loading data", 3000, "info");
-    getAllRoles().then((data) => {
+    getAllRoles()
+      .then((data) => {
         var rolesList = [];
         data?.roles?.forEach((role) => {
           rolesList?.push({
@@ -295,7 +299,12 @@ const RolePermissionManagement = () => {
         });
         setRoles(rolesList);
         showSnackbar("Data loaded", 3000, "success");
-      });
+      })
+      .catch((error) => {
+        console.error("Error fetching roles:", error);
+        showSnackbar("Failed to load roles.", 3000, "error");
+      })
+      .finally(() => setIsLoading(false));
   }
   useEffect(() => {
     handleRefresh();
@@ -309,12 +318,12 @@ const RolePermissionManagement = () => {
         <Typography variant="h5" gutterBottom>
           Role & Permission Management
         </Typography>
-        <div
-          style={{
+        <Box
+          sx={{
             display: "flex",
-            gap: "0.5rem",
+            gap: 1,
             alignItems: "center",
-            marginTop: "0.5rem",
+            marginTop: 1,
           }}
         >
           <TextField
@@ -346,10 +355,21 @@ const RolePermissionManagement = () => {
           >
             <LoopIcon />
           </Button>
-        </div>
+        </Box>
       </Paper>
 
       {/* Roles Table */}
+      {isLoading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : roles.length === 0 ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <Typography variant="body2" color="textSecondary">
+            No roles found.
+          </Typography>
+        </Box>
+      ) : (
       <TableContainer component={Paper}>
         <Table size="small" sx={{ borderCollapse: "collapse",minWidth:"98%",overflowX:"scroll" }}>
           <TableHead>
@@ -385,7 +405,7 @@ const RolePermissionManagement = () => {
                       onChange={handleRoleNameChange}
                       size="small"
                       variant="outlined"
-                      style={{ fontSize: "0.75rem" }}
+                      sx={{ fontSize: "0.75rem" }}
                     />
                   ) : (
                     role.roleName
@@ -395,18 +415,18 @@ const RolePermissionManagement = () => {
                 {/* Permissions */}
                 <TableCell sx={{ padding: "4px 8px" }}>
                   {permissionList.map((permission) => (
-                    <div
+                    <Box
                       key={permission.key}
-                      style={{
+                      sx={{
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "space-between",
                         marginBottom: "2px",
                       }}
                     >
-                      <span style={{ fontSize: "0.75rem" }}>
+                      <Typography component="span" sx={{ fontSize: "0.75rem" }}>
                         {permission.label}
-                      </span>
+                      </Typography>
                       {editingRoleId === role.roleId ? (
                         <Checkbox
                           checked={!!editedRole.permissions[permission.key]}
@@ -422,7 +442,7 @@ const RolePermissionManagement = () => {
                           size="small"
                         />
                       )}
-                    </div>
+                    </Box>
                   ))}
                 </TableCell>
 
@@ -438,60 +458,70 @@ const RolePermissionManagement = () => {
                 >
                   {editingRoleId === role.roleId ? (
                     <>
+                      {/* Tooltip needs a listenable child, so a disabled IconButton
+                          (which fires no events) is wrapped in a span. */}
                       <Tooltip title="Save">
-                        <IconButton
-                          color="primary"
-                          onClick={handleSave}
-                          size="small"
-                          disabled={
-                            role?.roleName == "admin" ||
-                            role?.roleName == "guest"
-                          }
-                        >
-                          <SaveIcon fontSize="small" />
-                        </IconButton>
+                        <span>
+                          <IconButton
+                            color="primary"
+                            onClick={handleSave}
+                            size="small"
+                            disabled={
+                              role?.roleName === "admin" ||
+                              role?.roleName === "guest"
+                            }
+                          >
+                            <SaveIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                       <Tooltip title="Cancel">
-                        <IconButton
-                          color="secondary"
-                          onClick={handleCancel}
-                          size="small"
-                          disabled={
-                            role?.roleName == "admin" ||
-                            role?.roleName == "guest"
-                          }
-                        >
-                          <CancelIcon fontSize="small" />
-                        </IconButton>
+                        <span>
+                          <IconButton
+                            color="secondary"
+                            onClick={handleCancel}
+                            size="small"
+                            disabled={
+                              role?.roleName === "admin" ||
+                              role?.roleName === "guest"
+                            }
+                          >
+                            <CancelIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                     </>
                   ) : (
                     <>
                       <Tooltip title="Edit">
-                        <IconButton
-                          color="primary"
-                          onClick={() => handleEdit(role)}
-                          size="small"
-                          disabled={
-                            role?.roleName == "admin" ||
-                            role?.roleName == "guest"
-                          }
-                        >
-                          <EditIcon fontSize="small" />
-                        </IconButton>
+                        <span>
+                          <IconButton
+                            color="primary"
+                            onClick={() => handleEdit(role)}
+                            size="small"
+                            disabled={
+                              role?.roleName === "admin" ||
+                              role?.roleName === "guest"
+                            }
+                          >
+                            <EditIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                       <Tooltip title="Delete">
-                        <IconButton
-                          color="secondary"
-                          onClick={() => handleDelete(role)}
-                          size="small"
-                          disabled={
-                            role?.roleName == "admin" ||
-                            role?.roleName == "guest"
-                          }
-                        >
-                          <DeleteIcon fontSize="small" />
-                        </IconButton>
+                        <span>
+                          <IconButton
+                            color="secondary"
+                            onClick={() => handleDelete(role)}
+                            size="small"
+                            disabled={
+                              role?.roleName === "admin" ||
+                              role?.roleName === "guest"
+                            }
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        </span>
                       </Tooltip>
                     </>
                   )}
@@ -501,6 +531,7 @@ const RolePermissionManagement = () => {
           </TableBody>
         </Table>
       </TableContainer>
+      )}
     </Container>
   );
 };
